@@ -68,7 +68,7 @@ if platform.platform().startswith('Darwin'):
     print 'blah'
     extra_compile_args.append('-Wno-unneeded-internal-declaration')
     extra_compile_args.append('-Wno-unused-private-field')
-    extra_compile_args.append('-Wmismatched-tags')
+    extra_compile_args.append('-Wno-mismatched-tags')
 
 extra_link_args = []
 if platform.platform().startswith('Darwin'):
