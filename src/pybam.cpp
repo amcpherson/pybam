@@ -119,46 +119,55 @@ public:
 			const PileupPosition& pileupData = m_PileupQueue.Pileups.front();
 			
 			int ntData[5][6] = {{0}};
+			int ambiguous = 0;
 			
 			for (vector<PileupAlignment>::const_iterator pileupIter = pileupData.PileupAlignments.begin(); pileupIter != pileupData.PileupAlignments.end(); ++pileupIter)
 			{
 				const PileupAlignment& pa = (*pileupIter);
 				const BamAlignment& ba = pa.Alignment;
 				
-				if ( !pa.IsCurrentDeletion )
+				if (pa.IsCurrentDeletion)
 				{
-					char base = toupper(ba.QueryBases.at(pa.PositionInAlignment));
-					
-					int baseIdx;
-					switch (base)
-					{
-						case 'A': baseIdx = 0; break;
-						case 'C': baseIdx = 1; break;
-						case 'G': baseIdx = 2; break;
-						case 'T': baseIdx = 3; break;
-						default: throw runtime_error("unrecognized base " + string(1, base));
-					}
-					
-					// count
-					ntData[baseIdx][0]++;
-					ntData[4][0]++;
-					
-					// quality
-					ntData[baseIdx][1] += ba.Qualities.at(pa.PositionInAlignment);
-					ntData[4][1] += ba.Qualities.at(pa.PositionInAlignment);
-					
-					// mapping quality
-					ntData[baseIdx][2] += ba.MapQuality;
-					ntData[4][2] += ba.MapQuality;
-					
-					// distance
-					ntData[baseIdx][3] += (ba.IsReverseStrand()) ? ba.Length - pa.PositionInAlignment - 1 : pa.PositionInAlignment;
-					ntData[4][3] += (ba.IsReverseStrand()) ? ba.Length - pa.PositionInAlignment - 1 : pa.PositionInAlignment;
-					
-					// direction
-					ntData[baseIdx][3] += (ba.IsReverseStrand()) ? 1 : 0;
-					ntData[4][3] += (ba.IsReverseStrand()) ? 1 : 0;
+					continue;
 				}
+				
+				char base = toupper(ba.QueryBases.at(pa.PositionInAlignment));
+				
+				if (base == 'N')
+				{
+					ambiguous++;
+					continue;
+				}
+				
+				int baseIdx;
+				switch (base)
+				{
+					case 'A': baseIdx = 0; break;
+					case 'C': baseIdx = 1; break;
+					case 'G': baseIdx = 2; break;
+					case 'T': baseIdx = 3; break;
+					default: throw runtime_error("unrecognized base " + string(1, base));
+				}
+				
+				// count
+				ntData[baseIdx][0]++;
+				ntData[4][0]++;
+				
+				// quality
+				ntData[baseIdx][1] += ba.Qualities.at(pa.PositionInAlignment);
+				ntData[4][1] += ba.Qualities.at(pa.PositionInAlignment);
+				
+				// mapping quality
+				ntData[baseIdx][2] += ba.MapQuality;
+				ntData[4][2] += ba.MapQuality;
+				
+				// distance
+				ntData[baseIdx][3] += (ba.IsReverseStrand()) ? ba.Length - pa.PositionInAlignment - 1 : pa.PositionInAlignment;
+				ntData[4][3] += (ba.IsReverseStrand()) ? ba.Length - pa.PositionInAlignment - 1 : pa.PositionInAlignment;
+				
+				// direction
+				ntData[baseIdx][3] += (ba.IsReverseStrand()) ? 1 : 0;
+				ntData[4][3] += (ba.IsReverseStrand()) ? 1 : 0;
 			}
 			
 			// Identify major base
@@ -193,7 +202,8 @@ public:
 									  python::make_tuple(ntData[3][0], ntData[3][1], ntData[3][2], ntData[3][3], ntData[3][4], ntData[3][5]),
 									  python::make_tuple(ntData[4][0], ntData[4][1], ntData[4][2], ntData[4][3], ntData[4][4], ntData[4][5]),
 									  majorBaseIdx,
-									  minorBaseIdx);
+									  minorBaseIdx,
+									  ambiguous);
 		}
 		
 		return python::object();
