@@ -160,6 +160,26 @@ public:
 				}
 			}
 			
+			// Identify major base
+			int majorBaseIdx = 0;
+			for (int baseIdx = 0; baseIdx < 4; baseIdx++)
+			{
+				if (ntData[baseIdx][0] > ntData[majorBaseIdx][0])
+				{
+					majorBaseIdx = baseIdx;
+				}
+			}
+			
+			// Identify minor base, initialize to base that is not the major base
+			int minorBaseIdx = (majorBaseIdx + 1) % 4;
+			for (int baseIdx = 0; baseIdx < 4; baseIdx++)
+			{
+				if (ntData[baseIdx][0] > ntData[minorBaseIdx][0] && baseIdx != majorBaseIdx)
+				{
+					majorBaseIdx = baseIdx;
+				}
+			}
+			
 			m_PileupQueue.Pileups.pop();
 			
 			return python::make_tuple(position,
@@ -167,8 +187,9 @@ public:
 									  python::make_tuple(ntData[1][0], ntData[1][1], ntData[1][2], ntData[1][3], ntData[1][4], ntData[1][5]),
 									  python::make_tuple(ntData[2][0], ntData[2][1], ntData[2][2], ntData[2][3], ntData[2][4], ntData[2][5]),
 									  python::make_tuple(ntData[3][0], ntData[3][1], ntData[3][2], ntData[3][3], ntData[3][4], ntData[3][5]),
-									  python::make_tuple(ntData[4][0], ntData[4][1], ntData[4][2], ntData[4][3], ntData[4][4], ntData[4][5])
-									  );
+									  python::make_tuple(ntData[4][0], ntData[4][1], ntData[4][2], ntData[4][3], ntData[4][4], ntData[4][5]),
+									  majorBaseIdx,
+									  minorBaseIdx);
 		}
 		
 		return python::object();

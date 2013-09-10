@@ -65,7 +65,6 @@ bamtools_source = [
 
 extra_compile_args = ['-Wno-unused-variable']
 if platform.platform().startswith('Darwin'):
-    print 'blah'
     extra_compile_args.append('-Wno-unneeded-internal-declaration')
     extra_compile_args.append('-Wno-unused-private-field')
     extra_compile_args.append('-Wno-mismatched-tags')
@@ -77,7 +76,7 @@ if platform.platform().startswith('Darwin'):
 ext_modules = [Extension('pybam',
                      ['src/pybam.cpp'] + boost_python_source + bamtools_source,
                      language='c++',
-                     include_dirs=['src', boost_source, 'bamtools/src/'],
+                     include_dirs=['./', './src', boost_source, './bamtools/src/'],
                      extra_compile_args=extra_compile_args,
                      extra_link_args=extra_link_args
                      )]
