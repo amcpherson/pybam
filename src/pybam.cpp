@@ -67,6 +67,9 @@ public:
 	
 	void Jump(const string& refName, int position)
 	{
+		// Interface is 1-based, bamtools is 0-based
+		position -= 1;
+		
 		int refID = m_BamReader.GetReferenceID(refName);
 		
 		if (refID < 0)
@@ -115,8 +118,6 @@ public:
 		{
 			const PileupPosition& pileupData = m_PileupQueue.Pileups.front();
 			
-			int position = pileupData.Position;
-			
 			int ntData[5][6] = {{0}};
 			
 			for (vector<PileupAlignment>::const_iterator pileupIter = pileupData.PileupAlignments.begin(); pileupIter != pileupData.PileupAlignments.end(); ++pileupIter)
@@ -133,8 +134,8 @@ public:
 					{
 						case 'A': baseIdx = 0; break;
 						case 'C': baseIdx = 1; break;
-						case 'T': baseIdx = 2; break;
-						case 'G': baseIdx = 3; break;
+						case 'G': baseIdx = 2; break;
+						case 'T': baseIdx = 3; break;
 						default: throw runtime_error("unrecognized base " + string(1, base));
 					}
 					
@@ -181,6 +182,9 @@ public:
 			}
 			
 			m_PileupQueue.Pileups.pop();
+			
+			// Interface is 1-based, bamtools is 0-based
+			int position = pileupData.Position + 1;
 			
 			return python::make_tuple(position,
 									  python::make_tuple(ntData[0][0], ntData[0][1], ntData[0][2], ntData[0][3], ntData[0][4], ntData[0][5]),
