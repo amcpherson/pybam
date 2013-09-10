@@ -65,9 +65,42 @@ public:
 		m_PileupQueue.Clear();
 	}
 	
-	void Jump(int refID, int position)
+	void Jump(const string& refName, int position)
 	{
+		int refID = m_BamReader.GetReferenceID(refName);
+		
+		if (refID < 0)
+		{
+			throw runtime_error("invalid ref name " + refName);
+		}
+		
+		m_PileupEngine.Flush();
+		m_PileupQueue.Clear();
+		
 		m_BamReader.Jump(refID, position);
+		
+		BamAlignment al;
+		while (m_BamReader.GetNextAlignment(al))
+		{
+			m_PileupEngine.AddAlignment(al);
+			
+			if (m_PileupQueue.Pileups.empty())
+			{
+				continue;
+			}
+			
+			// Remove positions before our target
+			while (!m_PileupQueue.Pileups.empty() && m_PileupQueue.Pileups.front().RefId == refID && m_PileupQueue.Pileups.front().Position < position)
+			{
+				m_PileupQueue.Pileups.pop();
+			}
+			
+			// Check if we have hit or passed our target
+			if (!m_PileupQueue.Pileups.empty() && (m_PileupQueue.Pileups.front().RefId != refID || m_PileupQueue.Pileups.front().Position >= position))
+			{
+				break;
+			}
+		}
 	}
 	
 	python::object Next()
