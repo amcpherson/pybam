@@ -78,6 +78,7 @@ ext_modules = [Extension('pybam',
                      language='c++',
                      include_dirs=['./', './src', boost_source, './bamtools/src/'],
                      extra_compile_args=extra_compile_args,
+                     libraries=['z'],
                      extra_link_args=extra_link_args
                      )]
 
