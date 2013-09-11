@@ -99,6 +99,18 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 		}
 	}
 	
+	// Calculate entropy
+	double depth = (double)pileupData.PileupAlignments.size(); // NOTE: COPIED FROM JEFF, THIS MAY BE A WRONG
+	double entropy = 0.0;
+	for (int baseIdx = 0; baseIdx < 4; baseIdx++)
+	{
+		double probability = (double)ntData[baseIdx][0] / depth;
+		if (probability != 0)
+		{
+			entropy -= (log(probability) * probability);
+		}
+	}
+	
 	// Interface is 1-based, bamtools is 0-based
 	int position = pileupData.Position + 1;
 	
@@ -110,7 +122,10 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 							  python::make_tuple(ntData[4][0], ntData[4][1], ntData[4][2], ntData[4][3], ntData[4][4], ntData[4][5]),
 							  majorBaseIdx,
 							  minorBaseIdx,
-							  ambiguous);
+							  ambiguous,
+							  0,
+							  entropy,
+							  0);
 }
 
 
