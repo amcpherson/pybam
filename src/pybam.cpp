@@ -160,9 +160,14 @@ struct PileupQueue : PileupVisitor
 class Pileup
 {
 public:
-	Pileup()
+	Pileup() : m_PileupEngine(0), m_PileupQueue(0)
 	{
-		m_PileupEngine.AddVisitor(&m_PileupQueue);
+	}
+	
+	~Pileup()
+	{
+		delete m_PileupEngine;
+		delete m_PileupQueue;
 	}
 	
 	void Open(const string& bamFilename)
@@ -177,17 +182,37 @@ public:
 			throw runtime_error("unable to open index for bam file " + bamFilename);
 		}
 		
-		m_PileupEngine.Flush();
-		m_PileupQueue.Clear();
-		
 		RefNames = python::list();
 		for (RefVector::const_iterator refDataIter = m_BamReader.GetReferenceData().begin(); refDataIter != m_BamReader.GetReferenceData().end(); refDataIter++)
 		{
 			RefNames.append(refDataIter->RefName);
 		}
+		
+		RestartPileupEngine();
 	}
 	
-	void Jump(const string& refName, int position)
+	void Rewind()
+	{
+		m_BamReader.Rewind();
+		
+		RestartPileupEngine();
+	}
+	
+	void JumpRef(const string& refName)
+	{
+		int refId = m_BamReader.GetReferenceID(refName);
+		
+		if (refId < 0)
+		{
+			throw runtime_error("invalid ref name " + refName);
+		}
+		
+		m_BamReader.Jump(refId);
+		
+		RestartPileupEngine();
+	}
+	
+	void JumpRefPosition(const string& refName, int position)
 	{
 		// Interface is 1-based, bamtools is 0-based
 		position -= 1;
@@ -199,58 +224,39 @@ public:
 			throw runtime_error("invalid ref name " + refName);
 		}
 		
-		m_PileupEngine.Flush();
-		m_PileupQueue.Clear();
-		
 		m_BamReader.Jump(refId, position);
 		
-		m_PileupQueue.StartPosition = position;
+		RestartPileupEngine();
 		
-		BamAlignment al;
-		while (m_BamReader.GetNextAlignment(al))
-		{
-			m_PileupEngine.AddAlignment(al);
-			
-			if (m_PileupQueue.Pileups.empty())
-			{
-				continue;
-			}
-			
-			// Remove positions before our target
-			while (!m_PileupQueue.Pileups.empty() && m_PileupQueue.Pileups.front()[0] == refId && m_PileupQueue.Pileups.front()[1] < position)
-			{
-				m_PileupQueue.Pileups.pop();
-			}
-			
-			// Check if we have hit or passed our target
-			if (!m_PileupQueue.Pileups.empty() && (m_PileupQueue.Pileups.front()[0] != refId || m_PileupQueue.Pileups.front()[1] >= position))
-			{
-				break;
-			}
-		}
+		m_PileupQueue->StartPosition = position;
 	}
 	
 	python::object Next()
 	{
+		if (m_PileupEngine == 0)
+		{
+			throw runtime_error("next called before open");
+		}
+		
 		BamAlignment al;
 		while (m_BamReader.GetNextAlignment(al))
 		{
-			m_PileupEngine.AddAlignment(al);
+			m_PileupEngine->AddAlignment(al);
 			
-			if (!m_PileupQueue.Pileups.empty())
+			if (!m_PileupQueue->Pileups.empty())
 			{
 				break;
 			}
 		}
 		
-		if (m_PileupQueue.Pileups.empty())
+		if (m_PileupQueue->Pileups.empty())
 		{
 			return python::object();
 		}
 		
 		python::tuple tpl;
-		swap(tpl, m_PileupQueue.Pileups.front());
-		m_PileupQueue.Pileups.pop();
+		swap(tpl, m_PileupQueue->Pileups.front());
+		m_PileupQueue->Pileups.pop();
 		
 		return tpl;
 	}
@@ -258,9 +264,21 @@ public:
 	python::list RefNames;
 	
 private:
+	void RestartPileupEngine()
+	{
+		delete m_PileupEngine;
+		m_PileupEngine = new PileupEngine();
+		
+		delete m_PileupQueue;
+		m_PileupQueue = new PileupQueue();
+		
+		m_PileupEngine->AddVisitor(m_PileupQueue);
+	}
+	
 	BamReader m_BamReader;
-	PileupEngine m_PileupEngine;
-	PileupQueue m_PileupQueue;
+	
+	PileupEngine* m_PileupEngine;
+	PileupQueue* m_PileupQueue;
 };
 
 
@@ -271,7 +289,9 @@ BOOST_PYTHON_MODULE(pybam)
 	class_<Pileup>("pileup", init<>())
 		.def_readonly("refnames", &Pileup::RefNames)
 		.def("open", &Pileup::Open)
-		.def("jump", &Pileup::Jump)
+		.def("rewind", &Pileup::Rewind)
+		.def("jump", &Pileup::JumpRef)
+		.def("jump", &Pileup::JumpRefPosition)
 		.def("next", &Pileup::Next)
 	;
 }
