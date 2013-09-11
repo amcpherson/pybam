@@ -131,10 +131,17 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 
 struct PileupQueue : PileupVisitor
 {
-	PileupQueue() : StartPosition(-1) {}
+	PileupQueue() : StartRefId(-1), StartPosition(-1) {}
 	
 	void Visit(const PileupPosition& pileupData)
 	{
+		// Reset if we ended up on the wrong chromosome
+		if (StartRefId >= 0 && pileupData.RefId != StartRefId)
+		{
+			StartRefId = -1;
+			StartPosition = -1;
+		}
+		
 		// Dont store tuples before the start position
 		if (pileupData.Position < StartPosition)
 		{
@@ -143,7 +150,8 @@ struct PileupQueue : PileupVisitor
 		
 		Pileups.push(CreatePileupTuple(pileupData));
 		
-		// Reset start position to have no further effect
+		// Reset start refid/position to have no further effect
+		StartRefId = -1;
 		StartPosition = -1;
 	}
 	
@@ -154,6 +162,7 @@ struct PileupQueue : PileupVisitor
 	}
 	
 	std::queue<python::tuple> Pileups;
+	int StartRefId;
 	int StartPosition;
 };
 
@@ -228,6 +237,7 @@ public:
 		
 		RestartPileupEngine();
 		
+		m_PileupQueue->StartRefId = refId;
 		m_PileupQueue->StartPosition = position;
 	}
 	
