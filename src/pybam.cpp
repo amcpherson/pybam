@@ -146,6 +146,12 @@ public:
 		
 		m_PileupEngine.Flush();
 		m_PileupQueue.Clear();
+		
+		RefNames = python::list();
+		for (RefVector::const_iterator refDataIter = m_BamReader.GetReferenceData().begin(); refDataIter != m_BamReader.GetReferenceData().end(); refDataIter++)
+		{
+			RefNames.append(refDataIter->RefName);
+		}
 	}
 	
 	void Jump(const string& refName, int position)
@@ -214,6 +220,8 @@ public:
 		return tpl;
 	}
 	
+	python::list RefNames;
+	
 private:
 	BamReader m_BamReader;
 	PileupEngine m_PileupEngine;
@@ -226,6 +234,7 @@ BOOST_PYTHON_MODULE(pybam)
 	using namespace python;
 	
 	class_<Pileup>("pileup", init<>())
+		.def_readonly("refnames", &Pileup::RefNames)
 		.def("open", &Pileup::Open)
 		.def("jump", &Pileup::Jump)
 		.def("next", &Pileup::Next)
