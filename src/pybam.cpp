@@ -29,6 +29,8 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 {
 	int ntData[5][6] = {{0}};
 	int ambiguous = 0;
+	int adjacentInsertions = 0;
+	int adjacentDeletions = 0;
 	
 	for (vector<PileupAlignment>::const_iterator pileupIter = pileupData.PileupAlignments.begin(); pileupIter != pileupData.PileupAlignments.end(); ++pileupIter)
 	{
@@ -77,6 +79,19 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 		// direction
 		ntData[baseIdx][3] += (ba.IsReverseStrand()) ? 1 : 0;
 		ntData[4][3] += (ba.IsReverseStrand()) ? 1 : 0;
+		
+		// adjacent insertions and deletions
+		for (std::vector<CigarOp>::const_iterator opIter = ba.CigarData.begin(); opIter != ba.CigarData.end(); opIter++)
+		{
+			if (opIter->Type == 'I')
+			{
+				adjacentInsertions++;
+			}
+			else if (opIter->Type == 'D')
+			{
+				adjacentDeletions++;
+			}
+		}
 	}
 	
 	// Identify major base
@@ -125,7 +140,10 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 							  ambiguous,
 							  0,
 							  entropy,
-							  0);
+							  0,
+							  adjacentInsertions,
+							  adjacentDeletions
+							  );
 }
 
 
