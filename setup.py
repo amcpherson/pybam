@@ -61,6 +61,8 @@ bamtools_source = [
  'bamtools/src/api/internal/sam/SamHeaderValidator_p.cpp',
  'bamtools/src/api/internal/utils/BamException_p.cpp',
  'bamtools/src/utils/bamtools_pileup_engine.cpp',
+ 'bamtools/src/utils/bamtools_fasta.cpp',
+ 'bamtools/src/utils/bamtools_utilities.cpp',
  ]
 
 extra_compile_args = ['-Wno-unused-variable']

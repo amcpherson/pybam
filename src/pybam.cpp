@@ -10,6 +10,7 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/graph/strong_components.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <boost/python/class.hpp>
 #include <boost/python/module.hpp>
@@ -19,6 +20,8 @@
 
 #include "bamtools/src/api/BamReader.h"
 #include "bamtools/src/utils/bamtools_pileup_engine.h"
+#include "bamtools/src/utils/bamtools_fasta.h"
+#include "bamtools/src/utils/bamtools_utilities.h"
 
 using namespace std;
 using namespace boost;
@@ -184,14 +187,14 @@ struct PileupQueue : PileupVisitor
 	int StartPosition;
 };
 
-class Pileup
+class PyPileup
 {
 public:
-	Pileup() : m_PileupEngine(0), m_PileupQueue(0)
+	PyPileup() : m_PileupEngine(0), m_PileupQueue(0)
 	{
 	}
 	
-	~Pileup()
+	~PyPileup()
 	{
 		delete m_PileupEngine;
 		delete m_PileupQueue;
@@ -309,18 +312,102 @@ private:
 	PileupQueue* m_PileupQueue;
 };
 
+class PyFasta
+{
+public:
+	PyFasta() : m_IsOpen(false)
+	{
+	}
+	
+	~PyFasta()
+	{
+		if (m_IsOpen)
+		{
+			m_Fasta.Close();
+		}
+	}
+	
+	void Open(const string& fastaFilename)
+	{
+		if (!Utilities::FileExists(fastaFilename))
+		{
+			throw runtime_error("invalid fasta file " + fastaFilename);
+		}
+		
+		string indexFilename = fastaFilename + ".fai";
+		
+		if (!Utilities::FileExists(indexFilename))
+		{
+			throw runtime_error("index file " + indexFilename + " not found");
+		}
+		
+		if (!m_Fasta.Open(fastaFilename, indexFilename))
+		{
+			throw runtime_error("unable to open fasta file " + fastaFilename);
+		}
+		
+		vector<string> referenceNames = m_Fasta.GetReferenceNames();
+		for (int refId = 0; refId < referenceNames.size(); refId++)
+		{
+			m_RefNameId[referenceNames[refId]] = refId;
+		}
+		
+		m_IsOpen = true;
+	}
+	
+	void Load(const string& bamFilename)
+	{
+	}
+	
+	python::object GetPosition(const string& refName, int position)
+	{
+		// Interface is 1-based, bamtools is 0-based
+		position -= 1;
+		
+		if (!m_IsOpen)
+		{
+			throw runtime_error("get called before open");
+		}
+		
+		unordered_map<string,int>::const_iterator refNameIdIter = m_RefNameId.find(refName);
+		if (refNameIdIter == m_RefNameId.end())
+		{
+			throw runtime_error("unknown ref name " + refName);
+		}
+		int refId = refNameIdIter->second;
+		
+		char referenceBase = 'N';
+		if (!m_Fasta.GetBase(refId, position, referenceBase))
+		{
+			throw runtime_error("unable to get base at " + refName + ":" + lexical_cast<string>(position));
+		}
+		
+		return python::make_tuple(referenceBase, 0, 0, 0, 0);
+	}
+	
+private:
+	Fasta m_Fasta;
+	bool m_IsOpen;
+	unordered_map<string,int> m_RefNameId;
+};
 
 BOOST_PYTHON_MODULE(pybam)
 {
 	using namespace python;
 	
-	class_<Pileup>("pileup", init<>())
-		.def_readonly("refnames", &Pileup::RefNames)
-		.def("open", &Pileup::Open)
-		.def("rewind", &Pileup::Rewind)
-		.def("jump", &Pileup::JumpRef)
-		.def("jump", &Pileup::JumpRefPosition)
-		.def("next", &Pileup::Next)
+	class_<PyPileup>("pileup", init<>())
+		.def_readonly("refnames", &PyPileup::RefNames)
+		.def("open", &PyPileup::Open)
+		.def("rewind", &PyPileup::Rewind)
+		.def("jump", &PyPileup::JumpRef)
+		.def("jump", &PyPileup::JumpRefPosition)
+		.def("next", &PyPileup::Next)
+	;
+	
+	class_<PyFasta>("fasta", init<>())
+		.def("open", &PyFasta::Open)
+		.def("load", &PyFasta::Load)
+		.def("get", &PyFasta::GetPosition)
 	;
 }
 
