@@ -16,11 +16,11 @@ pup.jump('20', 100170)
 
 p = pup.next()
 
-print pup.refnames[p[0]], p
+print pup.refnames[p[12]], p
 
 pup.jump('13', 100170)
 
 p = pup.next()
 
-print pup.refnames[p[0]], p
+print pup.refnames[p[12]], p
 

@@ -32,13 +32,26 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 {
 	int ntData[5][6] = {{0}};
 	int ambiguous = 0;
-	int adjacentInsertions = 0;
-	int adjacentDeletions = 0;
+	int insertionCount = 0;
+	int deletionCount = 0;
 	
 	for (vector<PileupAlignment>::const_iterator pileupIter = pileupData.PileupAlignments.begin(); pileupIter != pileupData.PileupAlignments.end(); ++pileupIter)
 	{
 		const PileupAlignment& pa = (*pileupIter);
 		const BamAlignment& ba = pa.Alignment;
+		
+		// adjacent insertions and deletions
+		for (std::vector<CigarOp>::const_iterator opIter = ba.CigarData.begin(); opIter != ba.CigarData.end(); opIter++)
+		{
+			if (opIter->Type == 'I')
+			{
+				insertionCount++;
+			}
+			else if (opIter->Type == 'D')
+			{
+				deletionCount++;
+			}
+		}
 		
 		if (pa.IsCurrentDeletion)
 		{
@@ -82,19 +95,6 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 		// direction
 		ntData[baseIdx][3] += (ba.IsReverseStrand()) ? 1 : 0;
 		ntData[4][3] += (ba.IsReverseStrand()) ? 1 : 0;
-		
-		// adjacent insertions and deletions
-		for (std::vector<CigarOp>::const_iterator opIter = ba.CigarData.begin(); opIter != ba.CigarData.end(); opIter++)
-		{
-			if (opIter->Type == 'I')
-			{
-				adjacentInsertions++;
-			}
-			else if (opIter->Type == 'D')
-			{
-				adjacentDeletions++;
-			}
-		}
 	}
 	
 	// Identify major base
@@ -132,7 +132,7 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 	// Interface is 1-based, bamtools is 0-based
 	int position = pileupData.Position + 1;
 	
-	return python::make_tuple(pileupData.RefId, position,
+	return python::make_tuple(position,
 							  python::make_tuple(ntData[0][0], ntData[0][1], ntData[0][2], ntData[0][3], ntData[0][4], ntData[0][5]),
 							  python::make_tuple(ntData[1][0], ntData[1][1], ntData[1][2], ntData[1][3], ntData[1][4], ntData[1][5]),
 							  python::make_tuple(ntData[2][0], ntData[2][1], ntData[2][2], ntData[2][3], ntData[2][4], ntData[2][5]),
@@ -141,11 +141,10 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 							  majorBaseIdx,
 							  minorBaseIdx,
 							  ambiguous,
-							  0,
+							  insertionCount,
 							  entropy,
-							  0,
-							  adjacentInsertions,
-							  adjacentDeletions
+							  deletionCount,
+							  pileupData.RefId
 							  );
 }
 
