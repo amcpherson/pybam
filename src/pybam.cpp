@@ -113,7 +113,7 @@ python::tuple CreatePileupTuple(const PileupPosition& pileupData)
 	{
 		if (ntData[baseIdx][0] > ntData[minorBaseIdx][0] && baseIdx != majorBaseIdx)
 		{
-			majorBaseIdx = baseIdx;
+			minorBaseIdx = baseIdx;
 		}
 	}
 	
