@@ -75,7 +75,7 @@ extra_link_args = []
 if platform.platform().startswith('Darwin'):
     extra_link_args.append('-Wl,-no_compact_unwind')
 
-ext_modules = [Extension('pybam',
+ext_modules = [Extension('newpybam',
                      ['src/pybam.cpp'] + boost_python_source + bamtools_source,
                      language='c++',
                      include_dirs=['./', './src', boost_source, './bamtools/src/'],
@@ -84,5 +84,5 @@ ext_modules = [Extension('pybam',
                      extra_link_args=extra_link_args
                      )]
 
-setup(name='pybam', ext_modules=ext_modules)
+setup(name='newpybam', ext_modules=ext_modules)
 

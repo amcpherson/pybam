@@ -386,7 +386,7 @@ private:
 	unordered_map<string,int> m_RefNameId;
 };
 
-BOOST_PYTHON_MODULE(pybam)
+BOOST_PYTHON_MODULE(newpybam)
 {
 	using namespace python;
 	

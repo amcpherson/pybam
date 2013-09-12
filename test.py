@@ -1,13 +1,13 @@
 
-import pybam
+import newpybam
 
-fa = pybam.fasta()
+fa = newpybam.fasta()
 
 fa.open('/Users/amcphers/Scratch/Homo_sapiens.GRCh37.71.dna.chromosome.fa')
 
 print fa.get('1', 100000)
 
-pup = pybam.pileup()
+pup = newpybam.pileup()
 pup.open('/Users/amcphers/Scratch/patient7/bam.bylibrary-normal_blood.hg19.sorted.bam')
 
 print pup.refnames
