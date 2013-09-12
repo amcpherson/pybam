@@ -354,10 +354,6 @@ public:
 		m_IsOpen = true;
 	}
 	
-	void Load(const string& bamFilename)
-	{
-	}
-	
 	python::object GetPosition(const string& refName, int position)
 	{
 		// Interface is 1-based, bamtools is 0-based
@@ -405,7 +401,6 @@ BOOST_PYTHON_MODULE(pybam)
 	
 	class_<PyFasta>("fasta", init<>())
 		.def("open", &PyFasta::Open)
-		.def("load", &PyFasta::Load)
 		.def("get", &PyFasta::GetPosition)
 	;
 }
