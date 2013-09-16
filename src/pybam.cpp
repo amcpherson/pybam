@@ -351,6 +351,8 @@ public:
 			m_RefNameId[referenceNames[refId]] = refId;
 		}
 		
+		m_RefLengths = m_Fasta.GetReferenceLengths();
+		
 		m_IsOpen = true;
 	}
 	
@@ -384,6 +386,7 @@ private:
 	Fasta m_Fasta;
 	bool m_IsOpen;
 	unordered_map<string,int> m_RefNameId;
+	vector<int> m_RefLengths;
 };
 
 BOOST_PYTHON_MODULE(newpybam)

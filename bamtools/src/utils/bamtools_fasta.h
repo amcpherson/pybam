@@ -36,6 +36,7 @@ class UTILS_EXPORT Fasta {
     // index-handling methods
     public:
 		std::vector<std::string> GetReferenceNames();
+		std::vector<int> GetReferenceLengths();
         bool CreateIndex(const std::string& indexFilename);
 
     // internal implementation
