@@ -275,20 +275,17 @@ public:
 			
 			if (!m_PileupQueue->Pileups.empty())
 			{
-				break;
+				return PopPileup();
 			}
 		}
+		m_PileupEngine->Flush();
 		
-		if (m_PileupQueue->Pileups.empty())
+		if (!m_PileupQueue->Pileups.empty())
 		{
-			return python::object();
+			return PopPileup();
 		}
 		
-		python::tuple tpl;
-		swap(tpl, m_PileupQueue->Pileups.front());
-		m_PileupQueue->Pileups.pop();
-		
-		return tpl;
+		return python::object();
 	}
 	
 	python::list RefNames;
@@ -303,6 +300,15 @@ private:
 		m_PileupQueue = new PileupQueue();
 		
 		m_PileupEngine->AddVisitor(m_PileupQueue);
+	}
+	
+	python::object PopPileup()
+	{
+		python::tuple tpl;
+		swap(tpl, m_PileupQueue->Pileups.front());
+		m_PileupQueue->Pileups.pop();
+		
+		return tpl;
 	}
 	
 	BamReader m_BamReader;
