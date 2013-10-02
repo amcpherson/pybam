@@ -268,6 +268,11 @@ public:
 			throw runtime_error("next called before open");
 		}
 		
+		if (!m_PileupQueue->Pileups.empty())
+		{
+			return PopPileup();
+		}
+		
 		BamAlignment al;
 		while (m_BamReader.GetNextAlignment(al))
 		{
